@@ -1,0 +1,5 @@
+ps -elf | grep uwsgi | grep order.ini | grep -v grep  | awk '{print $4}' | xargs kill -9
+sleep 3
+uwsgi  conf/order.ini > /dev/null 2>&1
+
+echo "Done"

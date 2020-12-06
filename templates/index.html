@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block content %}
+  <style type='text/css' media="print">
+      @page {
+          size: auto;  /* auto is the initial value */
+          margin: 0mm; /* this affects the margin in the printer settings */
+      }
+  </style>
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper" id="goods">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>帮选<small>点单帮选</small>
+      </h1>
+      <ol class="breadcrumb">
+          <i class="fa fa-repeat" @click="onReset">重置已选</i> 
+          <i class="fa fa-print" @click="onPrint">打印结果</i> 
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box box-primary">
+          </div>
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- ./row -->
+      <div class="row">
+        <div class="col-md-6">
+          <!-- split buttons box -->
+          <div class="box">
+            <div class="box-header with-border">
+              <h3 class="box-title">帮选菜单</h3>
+            </div>
+            <div class="box-body">
+              <p>快速搜索:</p>
+              <div class="margin">
+                  <input id="search-key" class="form-control" placeholder="输入酒品首字母进行搜索" @input="onSearch($event)">
+              </div>
+              {% for attr in attrs -%}
+              {% if admin == true or (attr.id != 1 and attr.id != 2) %}
+                  <p>{{attr.name}}:</p>
+                  <div class="margin">
+                    <div class="btn-group" attr-single="{{attr.single}}">
+                    {% for opt in attr.opts -%}
+                    <button type="button" @click="onUserSelect" attr-opt-id="{{attr.id}}.{{opt.id}}" attr-opt-selected=0 class="btn btn-flag btn-default margin">{{opt.value}}</button>
+                    {% endfor -%}
+                    </div>
+                  </div>
+              {% endif %}
+              {% endfor -%}
+            </div>
+            <!-- /.box-body -->
+          </div>
+          <!-- end split buttons box -->
+        </div>
+        <!-- /.col -->
+        <div class="col-md-6">
+          <div class="box">
+            <div class="box-header with-border">
+              <h3 class="box-title">帮选结果</h3>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body no-padding">
+              <table class="table table-striped" id="myElementId">
+                <tr class="no-print">
+                  <th style="width: 10px">#</th>
+                  <th>名称</th>
+                  <th>风险提示</th>
+                </tr>
+                <tr v-for="(good, index) in goods">
+                  <td>{[index+1]}.</td>
+                  <td><a href="javascript:void(0);" data-toggle="modal" data-target="#show-info-modal" v-bind:data-good-info="good.info">{[good.name]}</a></td>
+                  <td class="no-print">{[good.tip]}</td>
+                </tr>
+              </table>
+            </div>
+            <!-- /.box-body -->
+          </div>
+          <!-- /.box -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /. row -->
+    </section>
+    <!-- /.content -->
+  </div>
+
+  <!-- show-info-modal -->
+  <div class="modal fade" id="show-info-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">酒品简介</h4>
+        </div>
+        <div class="modal-body" id="good-info-detail">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.show-info-modal -->
+
+  <script>
+  $('#show-info-modal').on('show.bs.modal', function (event) {
+      $('#good-info-detail').html("暂无简介");
+      if ( $(event.relatedTarget).data('good-info') != "" ) {
+        $('#good-info-detail').html($(event.relatedTarget).data('good-info'));
+    }
+  })
+  var goodsAll = {{ goods|tojson }};
+  var goodsOrigin = {{ goods|tojson }};
+  var app = new Vue({
+      delimiters: ['{[', ']}'],
+      el: '#goods',
+      data: {
+          goods: goodsAll,
+      },
+      methods: {
+          onSearch: function  (event) {
+              app.goods = goodsOrigin;
+              // 清除所有按钮
+              var bts = $('#goods [attr-opt-id]');
+              for (i=0; i<bts.length; i++) {
+                  bts[i].classList.remove("btn-warning");
+                  bts[i].classList.add("btn-default");
+                  bts[i].attributes['attr-opt-selected'].value = 0;
+              }
+              // get goods
+              var goodsNew = [];
+              for (i in goodsAll) {
+                  if (goodsAll[i].first_alpha.startsWith(event.currentTarget.value.toLowerCase())) {
+                       goodsNew.push(goodsAll[i]);
+                  }
+              }
+              app.goods = goodsNew;
+              if (app.goods.length == 1) {
+                  good = app.goods[0]
+                  for (key in good.attr) {
+                      for (v in good.attr[key]) {
+                          var id = key+"."+good.attr[key][v];
+                          var bts = $('#goods [attr-opt-id]');
+                          for (i=0; i<bts.length; i++) {
+                              if (bts[i].attributes['attr-opt-id'].value == id) {
+                                  bts[i].classList.add("btn-warning");
+                                  bts[i].attributes['attr-opt-selected'].value = 1;
+                              }
+                          }
+                      }
+                  }
+              }
+          },
+
+          onPrint: function (event) {
+              $("#myElementId").print({
+                  globalStyles:true,                  //是否包含父文档的样式，默认为true
+                  mediaPrint:true,                   //是否包含media='print'的链接标签。会被globalStyles选项覆盖，默认为false
+                  stylesheet:null,                    //外部样式表的URL地址，默认为null
+                  noPrintSelector:".no-print",        //不想打印的元素的jQuery选择器，默认为".no-print"
+                  iframe:true,                        //是否使用一个iframe来替代打印表单的弹出窗口，true为在本页面进行打印，false就是说新开一个页面打印，默认为true
+                  prepend:'<center>酒品</center><br><center>========Start========<center>',//将内容添加到打印内容的前面，可以用来作为要打印内容
+                  append:'<center>========End========<center>',     //将内容添加到打印内容的后面
+              });
+          },
+          onUserSelect: function (event) {
+              // 清除搜索
+              $('#search-key').val("");
+
+              var chd = event.srcElement.parentElement.children;
+              var sel = event.srcElement.attributes['attr-opt-selected'].value;
+              if (event.srcElement.parentElement.attributes['attr-single'].value == 1) {
+                  for (i=0; i<chd.length; i++) {
+                      chd[i].classList.remove("btn-warning");
+                      chd[i].classList.add("btn-default");
+                      chd[i].attributes['attr-opt-selected'].value = 0;
+                  }
+                  if (sel == 1) {
+                      event.srcElement.classList.remove("btn-warning");
+                      event.srcElement.classList.add("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 0;
+                  }
+                  else {
+                      event.srcElement.classList.add("btn-warning");
+                      event.srcElement.classList.remove("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 1;
+                  }
+              }
+              else {
+                  if (event.srcElement.attributes['attr-opt-selected'].value == 1) {
+                      event.srcElement.classList.remove("btn-warning");
+                      event.srcElement.classList.add("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 0;
+                  }
+                  else {
+                      event.srcElement.classList.add("btn-warning");
+                      event.srcElement.classList.remove("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 1;
+                  }
+              }
+              app.refreshGoods();
+          },
+          refreshGoods: function() {
+              var bts = $('#goods [attr-opt-id]');
+              var selected = {}
+              for (i=0; i<bts.length; i++) {
+                  if (bts[i].attributes['attr-opt-selected'].value == 0) {
+                      continue
+                  }
+                  var optid = bts[i].attributes['attr-opt-id'].value.split(".");
+                  if (! selected[parseInt(optid[0])]) {
+                      selected[parseInt(optid[0])] = [];
+                  }
+                  selected[parseInt(optid[0])].push(parseInt(optid[1]));
+              }
+              app.goods = app.selectGoods(selected);
+          },
+          selectGoods: function(selected) {
+              var goodsNew = [];
+              for (i in goodsAll) {
+                  var flag = true;
+                  for (key in selected) {
+                    // 没有该key
+                    if (!goodsAll[i].attr[key] || goodsAll[i].attr[key].length == 0) {
+                        flag = false;
+                    }
+                    // 有key，判断所有属性是否在key选择中
+                    var t_flag = [];
+                    for (v in goodsAll[i].attr[key]) {
+                        if (selected[key].indexOf(goodsAll[i].attr[key][v]) == -1) {
+                            t_flag.push(false);
+                        }
+                        else {
+                            t_flag.push(true);
+                        }
+                    }
+                    if (t_flag.indexOf(true) == -1) {
+                        flag = false;
+                    }
+                  }
+                  if (flag == true) {
+                      goodsNew.push(goodsAll[i]);
+                  }
+              }
+              return goodsNew;
+          },
+          onReset: function (event) {
+              var bts = $('#goods [attr-opt-id]');
+              for (i=0; i<bts.length; i++) {
+                  bts[i].classList.remove("btn-warning");
+                  bts[i].classList.add("btn-default");
+                  bts[i].attributes['attr-opt-selected'].value = 0;
+              }
+              app.goods = goodsOrigin;
+          },
+      },
+  })
+  </script>
+{% endblock %}

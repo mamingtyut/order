@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>管理<small>酒品管理</small></h1>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="box">
+            <!-- /.box-header -->
+            <div class="box-body">
+              <table id="example2" class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                  <th>#</th>
+                  <th>名称</th>
+                  <th>状态</th>
+                  <th>编辑</th>
+                </tr>
+                </thead>
+                <tbody>
+                {%for i, good in enumerate(goods)%}
+                <tr>
+                  <td>{{i+1}}</td>
+                  <td>{{good.name}}</td>
+                  {% if good.state == 1 %}
+                  <td>在售</td>
+                  {%else%}
+                  <td>停售</td>
+                  {%endif%}
+                  <td>
+                      <a href="/admin/goods/update/{{good.id}}" >编辑</a>
+                      <a href="" data-toggle="modal" data-target="#delete_good_modal" data-good-id="{{good.id}}">删除</a>
+                      {% if good.state == 1 %}
+                      <a href="javascript:void(0);" data-toggle="modal" data-target="#offline_good_modal" data-good-id="{{good.id}}">转停售</a>
+                      {%else%}
+                      <a href="javascript:void(0);" data-toggle="modal" data-target="#online_good_modal" data-good-id="{{good.id}}">转在售</a>
+                      {%endif%}
+                  </td>
+                </tr>
+                {%endfor%}
+                </tfoot>
+              </table>
+            </div>
+            <!-- /.box-body -->
+          </div>
+          <!-- /.box -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+
+<!-- delete_good_modal -->
+<div class="modal fade" id="delete_good_modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">确认删除</h4>
+      </div>
+      <div class="modal-body">
+        确定删除, 删除后不可恢复
+      </div>
+      <div class="modal-footer">
+        <input  type="hidden" id="delete_good_id"/>
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" id="delete_submit_btn" class="btn btn-primary" data-loading-text="删除中...">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.delete_good_modal -->
+
+<!-- online_good_modal -->
+<div class="modal fade" id="online_good_modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">确认转在售</h4>
+      </div>
+      <div class="modal-body">
+        转在售后，前端帮选即可获选择该商品
+      </div>
+      <div class="modal-footer">
+        <input  type="hidden" id="online_good_id"/>
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" id="online_submit_btn" class="btn btn-primary" data-loading-text="提交中...">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.online_good_modal -->
+
+<!-- offline_good_modal -->
+<div class="modal fade" id="offline_good_modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">确认转停售</h4>
+      </div>
+      <div class="modal-body">
+        转停售后，前端帮选无法获选择该商品
+      </div>
+      <div class="modal-footer">
+        <input  type="hidden" id="offline_good_id"/>
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" id="offline_submit_btn" class="btn btn-primary" data-loading-text="转草稿中...">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.offline_good_modal -->
+
+<!-- modify_good_modal -->
+<div class="modal fade" id="modify_good_modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document" >
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">编辑</h4>
+      </div>
+      <div class="modal-body" >
+          <p>酒品名称</p>
+          <div class="margin">
+              <input id="good_title", class="form-control" placeholder="标题">
+          </div>
+          {% for attr in attrs -%}
+          <p>{{attr.name}}:</p>
+          <div class="margin">
+            <div class="btn-group" attr-single="{{attr.single}}">
+            {% for opt in attr.opts -%}
+            <button type="button" @click="onUserSelect" attr-opt-id="{{attr.id}}.{{opt.id}}" attr-opt-selected=0 class="btn btn-flag btn-default margin">{{opt.value}}</button>
+            {% endfor -%}
+            </div>
+          </div>
+          {% endfor -%}
+      </div>
+      <div class="modal-footer">
+        <input  type="hidden" id="modify_good_id"/>
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" id="modify_submit_btn" class="btn btn-primary" data-loading-text="提交中...">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.modify_good_modal -->
+
+<script >
+    $(function () {
+        // delete good
+        $('#delete_good_modal').on('show.bs.modal', function (event) {
+            $('#delete_good_id').val($(event.relatedTarget).data('good-id'));
+        })
+        $("#delete_submit_btn").click(function(){
+            $(this).button('loading').delay(1000).queue(function() {
+                delete_good_id = $('#delete_good_id').val();
+                window.location.href="/admin/goods/delete/"+delete_good_id;
+            });        
+        });
+        // online good
+        $('#online_good_modal').on('show.bs.modal', function (event) {
+            $('#online_good_id').val($(event.relatedTarget).data('good-id'));
+        })
+        $("#online_submit_btn").click(function(){
+            $(this).button('loading').delay(1000).queue(function() {
+                online_good_id = $('#online_good_id').val();
+                window.location.href="/admin/goods/state/"+online_good_id+"/1";
+            });        
+        });
+        // offline good
+        $('#offline_good_modal').on('show.bs.modal', function (event) {
+            $('#offline_good_id').val($(event.relatedTarget).data('good-id'));
+        })
+        $("#offline_submit_btn").click(function(){
+            $(this).button('loading').delay(1000).queue(function() {
+                offline_good_id = $('#offline_good_id').val();
+                window.location.href="/admin/goods/state/"+offline_good_id+"/0";
+            });        
+        });
+        // modify
+        $('.modify').click(function(){
+            var good_id = $(this).data('good-id');
+            $.ajax({
+                url: '/get_good_info/' + good_id,
+                async: true,
+                dataType: 'json',
+                type: 'GET',
+                success: function(data , textStatus){
+                    $('#good_title').val(data.title);
+                    $('#modify_good_id').val(data.id);
+                    $('#modify_good_modal').modal()
+                    console.log(data);
+                },
+                error: function(jqXHR , textStatus , errorThrown){
+                    console.log("error");
+                },
+            });
+        });
+        // create
+        $('.create').click(function(){
+            $('#modify_good_id').val("");
+            $('#good_title').val("");
+            $('#modify_good_modal').modal()
+        });
+        // modify submit
+        $("#modify_submit_btn").click(function(){
+            $(this).button('loading').delay(1000).queue(function() {
+                var post_data = {};
+                post_data['good_id']  = $('#modify_good_id').val();
+                post_data['title']    = $('#good_title').val();
+                post_data['type_id']  = {{type_id}}
+                console.log(post_data);
+                if (post_data['good_id'] == "") {
+                    url = '/create_good';
+                }
+                else {
+                    url = '/modify_good';
+                }
+                $.ajax({
+                    url: url,
+                    async: true,
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    type: 'POST',
+                    data: JSON.stringify(post_data),
+                    success: function(data , textStatus){
+                        window.location.href="/good_list/"+data['type_id'];
+                        console.log("success");
+                    },
+                    error: function(jqXHR , textStatus , errorThrown){
+                        console.log("error");
+                    },
+                });
+            });        
+        });
+    });
+
+    var goodsAll = {{ goods|tojson }};
+    var app = new Vue({
+        delimiters: ['{[', ']}'],
+        el: '#addgoods',
+        data: {
+            goods: goodsAll,
+        },
+        methods: {
+            onUserSelect: function (event) {
+                if (event.srcElement.parentElement.attributes['attr-single'].value == 1) {
+                    var chd = event.srcElement.parentElement.children;
+                    for (i=0; i<chd.length; i++) {
+                        chd[i].classList.remove("btn-warning");
+                        chd[i].classList.add("btn-default");
+                        chd[i].attributes['attr-opt-selected'].value = 0;
+                    }
+                    event.srcElement.classList.add("btn-warning");
+                    event.srcElement.classList.remove("btn-default");
+                    event.srcElement.attributes['attr-opt-selected'].value = 1;
+                }
+                else {
+                    if (event.srcElement.attributes['attr-opt-selected'].value == 1) {
+                        event.srcElement.classList.remove("btn-warning");
+                        event.srcElement.classList.add("btn-default");
+                        event.srcElement.attributes['attr-opt-selected'].value = 0;
+                    }
+                    else {
+                        event.srcElement.classList.add("btn-warning");
+                        event.srcElement.classList.remove("btn-default");
+                        event.srcElement.attributes['attr-opt-selected'].value = 1;
+                    }
+                }
+            },
+        },
+    })
+</script>
+{% endblock %}

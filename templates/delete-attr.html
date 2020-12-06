@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<style type="text/css">
+.user-define {
+    margin: auto;
+    padding: 10px 0 0 0;
+}
+</style>
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper" id="goods">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>系统菜单<small>删减属性</small>
+      </h1>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box box-primary">
+          </div>
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- ./row -->
+      <div class="row">
+        <div class="col-md-6">
+          <!-- split buttons box -->
+          <div class="box">
+            <div class="box-header with-border">
+              <h3 class="box-title">帮选菜单</h3>
+            </div>
+            <div class="box-body">
+              {% for attr in attrs -%}
+              <p>{{attr.name}}:</p>
+              <div class="margin">
+                <div class="btn-group">
+                {% for opt in attr.opts -%}
+                <button type="button" @click="onUserSelect" attr-opt-id="{{attr.id}}.{{opt.id}}" attr-opt-selected=0 class="btn btn-flag btn-default margin">{{opt.value}}</button>
+                {% endfor -%}
+                </div>
+              </div>
+              {% endfor -%}
+            </div>
+            <!-- /.box-body -->
+            <div class="modal-footer">
+                <input  type="hidden" id="modify_good_id"/>
+                <button type="button" id="create_submit_btn" class="btn btn-primary" data-loading-text="提交中...">确认删除</button>
+            </div>
+          </div>
+          <!-- end split buttons box -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /. row -->
+    </section>
+    <!-- /.content -->
+  </div>
+  <script>
+      var app = new Vue({
+          delimiters: ['{[', ']}'],
+          el: '#goods',
+          data: {
+          },
+          methods: {
+              onUserSelect: function (event) {
+                  var chd = event.srcElement.parentElement.children;
+                  var sel = event.srcElement.attributes['attr-opt-selected'].value;
+                  for (i=0; i<chd.length; i++) {
+                      if (chd[i].hasAttribute('attr-opt-selected')) {
+                          chd[i].classList.remove("btn-warning");
+                          chd[i].classList.add("btn-default");
+                          chd[i].attributes['attr-opt-selected'].value = 0;
+                      }
+                  }
+                  if (sel == 1) {
+                      event.srcElement.classList.remove("btn-warning");
+                      event.srcElement.classList.add("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 0;
+                  }
+                  else {
+                      event.srcElement.classList.add("btn-warning");
+                      event.srcElement.classList.remove("btn-default");
+                      event.srcElement.attributes['attr-opt-selected'].value = 1;
+                  }
+              }
+          },
+      })
+
+      $("#create_submit_btn").click(function(){
+          var post_data = {};
+          post_data['opts'] = [];
+
+          // 选择属性
+          var bts = $('#goods [attr-opt-id]');
+          var selected = {}
+          for (i=0; i<bts.length; i++) {
+              var optid = bts[i].attributes['attr-opt-id'].value.split(".");
+              if (! selected[parseInt(optid[0])]) {
+                  selected[parseInt(optid[0])] = [];
+              }
+              if (bts[i].attributes['attr-opt-selected'].value == 1) {
+                  selected[parseInt(optid[0])].push(parseInt(optid[1]));
+              }
+          }
+
+          post_data['opts'] = selected;
+          console.log(post_data);
+
+          $.ajax({
+              url: '/admin/attr/delete',
+              async: true,
+              dataType: 'json',
+              contentType: 'application/json',
+              type: 'POST',
+              data: JSON.stringify(post_data),
+              success: function(data , textStatus){
+                  window.location.href="/admin/attr/delete";
+                  console.log("success");
+              },
+              error: function(jqXHR , textStatus , errorThrown){
+                  console.log("error");
+              },
+          });
+      });
+  </script>
+  {% endblock %}
